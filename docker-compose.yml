@@ -1,0 +1,51 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    ports:
+      - '5432:5432'
+      - '15672:15672'
+    networks:
+      - 'default'
+  webapp:
+    build:
+      context: webapp
+    image: webapp
+    env_file:
+      - variables.env
+    volumes:
+      - './webapp:/webappDev'
+      - './webapp/data/ipfs:/data/ipfs'
+    working_dir: "/webappDev"
+    ports:
+      - "8000:8000"
+    networks:
+      - 'default'
+    depends_on:
+      - db
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:3.6.12-management
+    hostname: rabbitmq
+    ports:
+       - "8080:15672"  # management port (guest:guest)
+       - "5672:5672"   # amqp port
+    networks:
+      - 'default'
+  ocr:
+    build:
+      context: ocr
+    image: ocr
+    env_file:
+      - variables.env
+    volumes:
+      - './ocr:/ocrDev'
+      - './ocr/data/ipfs:/data/ipfs'
+    working_dir: "/ocrDev"
+    depends_on:
+      - rabbitmq
+    networks:
+      - 'default'
+
+networks:
+  default:
